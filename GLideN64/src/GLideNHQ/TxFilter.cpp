@@ -299,33 +299,39 @@ TxFilter::filter(uint8 *src, int srcwidth, int srcheight, uint16 srcformat, uint
 					numcore--;
 				}
 				if (blkrow > 0 && numcore > 1) {
-					//std::thread *thrd[MAX_NUMCORE];
+#ifndef HAVE_LIBNX
+					std::thread *thrd[MAX_NUMCORE];
+#endif
 					unsigned int i;
 					int blkheight = blkrow << 2;
 					unsigned int srcStride = (srcwidth * blkheight) << 2;
 					unsigned int destStride = srcStride * scale * scale;
 					for (i = 0; i < numcore - 1; i++) {
-						/*thrd[i] = new std::thread(std::bind(filter_8888,
+#ifndef HAVE_LIBNX
+						thrd[i] = new std::thread(std::bind(filter_8888,
 																(uint32*)_texture,
 																srcwidth,
 																blkheight,
 																(uint32*)_tmptex,
 																filter,
-																i));*/
+																i));
+#endif
 						_texture += srcStride;
 						_tmptex  += destStride;
 					}
-					/*thrd[i] = new std::thread(std::bind(filter_8888,
+#ifndef HAVE_LIBNX
+                    thrd[i] = new std::thread(std::bind(filter_8888,
 															(uint32*)_texture,
 															srcwidth,
 															srcheight - blkheight * i,
 															(uint32*)_tmptex,
 															filter,
-															i));*/
-					/*for (i = 0; i < numcore; i++) {
+															i));
+					for (i = 0; i < numcore; i++) {
 						thrd[i]->join();
 						delete thrd[i];
-					}*/
+					}
+#endif
 				} else {
 					filter_8888((uint32*)_texture, srcwidth, srcheight, (uint32*)_tmptex, filter, 0);
 				}
