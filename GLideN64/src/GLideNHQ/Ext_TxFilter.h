@@ -34,7 +34,7 @@
 #define CHDIR(a) SetCurrentDirectoryW(a)
 #else
 #include <iostream>
-#ifndef HAVE_LIBNX
+#ifndef __LIBRETRO__
 #include <dlfcn.h>
 #endif
 #include <unistd.h>

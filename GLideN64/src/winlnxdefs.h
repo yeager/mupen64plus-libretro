@@ -30,7 +30,7 @@
 #ifndef WINLNXDEFS_H
 #define WINLNXDEFS_H
 
-#ifndef HAVE_LIBNX
+#ifndef __LIBRETRO__
 #include <dlfcn.h>
 #endif
 

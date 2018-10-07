@@ -120,17 +120,18 @@ else ifneq (,$(findstring rpi,$(platform)))
    endif
    COREFLAGS += -DOS_LINUX
    ASFLAGS = -f elf -d ELF_TYPE
-   
+
 # Nintendo Switch
 else ifeq ($(platform), libnx)
    include $(DEVKITPRO)/libnx/switch_rules
    PIC = 1
    TARGET := $(TARGET_NAME)_libretro_$(platform).a
    CPUOPTS := -g -march=armv8-a -mtune=cortex-a57 -mtp=soft -mcpu=cortex-a57+crc+fp+simd
-   PLATCFLAGS = -O3 -ffast-math -funsafe-math-optimizations -fPIE -I$(PORTLIBS)/include/ -I$(LIBNX)/include/ -ffunction-sections -fdata-sections -ftls-model=local-exec -Wl,--allow-multiple-definition -specs=$(LIBNX)/switch.specs
+   PLATCFLAGS = -O3 -ffast-math -funsafe-math-optimizations -fPIE -I$(PORTLIBS)/include/ -I$(LIBNX)/include/ -ffunction-sections -fdata-sections -ftls-model=local-exec -specs=$(LIBNX)/switch.specs
    PLATCFLAGS += $(INCLUDE) -D__SWITCH__=1 -DSWITCH -DHAVE_LIBNX -D_GLIBCXX_USE_C99_MATH_TR1 -D_LDBL_EQ_DBL -funroll-loops
    SOURCES_C += $(CORE_DIR)/src/r4300/empty_dynarec.c
    CXXFLAGS += -fno-rtti -std=gnu++11
+   COREFLAGS += -DOS_LINUX
    GLES = 0
    WITH_DYNAREC =
    DYNAREC_USED = 0
@@ -326,13 +327,18 @@ ifeq ($(DEBUG), 1)
    CPUOPTS += -DOPENGL_DEBUG
 else
    CPUOPTS += -DNDEBUG -fsigned-char -ffast-math -fno-strict-aliasing -fomit-frame-pointer -fvisibility=hidden
+ifneq ($(platform), libnx)
+   CPUOPTS := -O2 $(CPUOPTS)
+endif
    CXXFLAGS += -fvisibility-inlines-hidden
 endif
 
-#CXXFLAGS += -std=c++11
+ifneq ($(platform), libnx)
+CXXFLAGS += -std=c++11
+endif
 
 ifeq ($(PIC), 1)
-#   fpic = -fPIC
+   fpic = -fPIC
 else
    fpic = -fno-PIC
 endif
