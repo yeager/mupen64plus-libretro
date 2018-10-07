@@ -15,16 +15,44 @@ UNAME=$(shell uname -a)
 ROOT_DIR := .
 LIBRETRO_DIR := $(ROOT_DIR)/libretro
 
-ifneq (,$(findstring unix,$(platform)))
-   real_platform = linux
-endif
-
-ifneq (,$(findstring linux,$(platform)))
-   real_platform = linux
-endif
-
 ifeq ($(platform),)
-   real_platform = linux
+   platform = unix
+   ifeq ($(UNAME),)
+      platform = win
+   else ifneq ($(findstring MINGW,$(UNAME)),)
+      platform = win
+   else ifneq ($(findstring Darwin,$(UNAME)),)
+      platform = osx
+   else ifneq ($(findstring win,$(UNAME)),)
+      platform = win
+   endif
+else ifneq (,$(findstring armv,$(platform)))
+   override platform += unix
+else ifneq (,$(findstring rpi,$(platform)))
+   override platform += unix
+else ifneq (,$(findstring odroid,$(platform)))
+   override platform += unix
+endif
+
+# system platform
+system_platform = unix
+ifeq ($(shell uname -a),)
+   EXE_EXT = .exe
+   system_platform = win
+else ifneq ($(findstring Darwin,$(shell uname -a)),)
+   system_platform = osx
+   arch = intel
+ifeq ($(shell uname -p),powerpc)
+   arch = ppc
+endif
+else ifneq ($(findstring MINGW,$(shell uname -a)),)
+   system_platform = win
+endif
+
+# Cross compile ?
+
+ifeq (,$(ARCH))
+   ARCH = $(shell uname -m)
 endif
 
 # Cross compile ?
@@ -53,7 +81,7 @@ ifneq ($(GIT_VERSION)," unknown")
 endif
 
 # Linux
-ifneq (,$(findstring linux,$(real_platform)))
+ifneq (,$(findstring unix,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
    LDFLAGS += -shared -Wl,--version-script=$(LIBRETRO_DIR)/link.T -Wl,--no-undefined
 
@@ -67,6 +95,8 @@ ifneq (,$(findstring linux,$(real_platform)))
       GL_LIB := -lGL
    endif
 
+   COREFLAGS += -DOS_LINUX
+   ASFLAGS = -f elf -d ELF_TYPE
 # Raspberry Pi
 else ifneq (,$(findstring rpi,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
@@ -89,6 +119,8 @@ else ifneq (,$(findstring rpi,$(platform)))
       HAVE_NEON = 1
    endif
 
+   COREFLAGS += -DOS_LINUX
+   ASFLAGS = -f elf -d ELF_TYPE
 # ODROIDs
 else ifneq (,$(findstring odroid,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.so
@@ -114,6 +146,8 @@ else ifneq (,$(findstring odroid,$(platform)))
       CPUFLAGS += -mcpu=cortex-a9
    endif
 
+   COREFLAGS += -DOS_LINUX
+   ASFLAGS = -f elf -d ELF_TYPE
 # OS X
 else ifneq (,$(findstring osx,$(platform)))
    TARGET := $(TARGET_NAME)_libretro.dylib
@@ -131,6 +165,8 @@ else ifneq (,$(findstring osx,$(platform)))
       WITH_DYNAREC =
    endif
 
+   COREFLAGS += -DOS_LINUX
+   ASFLAGS = -f elf -d ELF_TYPE
 # iOS
 else ifneq (,$(findstring ios,$(platform)))
    ifeq ($(IOSSDK),)
@@ -167,6 +203,8 @@ else ifneq (,$(findstring ios,$(platform)))
       PLATCFLAGS += -miphoneos-version-min=5.0
    endif
 
+   COREFLAGS += -DOS_LINUX
+   ASFLAGS = -f elf -d ELF_TYPE
 # Android
 else ifneq (,$(findstring android,$(platform)))
    LDFLAGS += -shared -Wl,--version-script=$(LIBRETRO_DIR)/link.T -Wl,--no-undefined -Wl,--warn-common -llog
@@ -195,6 +233,8 @@ else ifneq (,$(findstring android,$(platform)))
    endif
    CPUFLAGS += -DANDROID -DEGL_EGLEXT_PROTOTYPES
 
+   COREFLAGS += -DOS_LINUX
+   ASFLAGS = -f elf -d ELF_TYPE
 # emscripten
 else ifeq ($(platform), emscripten)
    TARGET := $(TARGET_NAME)_libretro_emscripten.bc
@@ -228,8 +268,10 @@ else ifeq ($(platform), emscripten)
    CXX = em++
    HAVE_NEON = 0
 
+   COREFLAGS += -DOS_LINUX
+   ASFLAGS = -f elf -d ELF_TYPE
 # Windows
-else ifneq (,$(findstring win,$(platform)))
+else
    TARGET := $(TARGET_NAME)_libretro.dll
    LDFLAGS += -shared -static-libgcc -static-libstdc++ -Wl,--version-script=$(LIBRETRO_DIR)/link.T -lwinmm -lgdi32
    GL_LIB := -lopengl32
@@ -242,14 +284,8 @@ else ifneq (,$(findstring win,$(platform)))
       CXX = x86_64-w64-mingw32-g++
       WITH_DYNAREC = x86_64
    endif
-endif
-
-ifneq (,$(findstring win,$(platform)))
-   COREFLAGS += -DOS_WINDOWS -DMINGW
-   ASFLAGS = -f win32
-else
-   COREFLAGS += -DOS_LINUX
-   ASFLAGS = -f elf -d ELF_TYPE
+	COREFLAGS += -DOS_WINDOWS -DMINGW
+	ASFLAGS = -f win32
 endif
 
 ifeq ($(STATIC_LINKING), 1)
