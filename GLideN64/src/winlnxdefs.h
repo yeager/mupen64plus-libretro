@@ -100,7 +100,7 @@ static inline const char *GetPluginDir()
 #ifdef __LIBRETRO__
     return "/";
 #else
-   static char path[PATH_MAX];v
+   static char path[PATH_MAX];
 #ifdef __USE_GNU
 	Dl_info info;
 	void *addr = (void *)GetPluginDir;
@@ -127,7 +127,7 @@ static inline const char *GetPluginDir()
 #endif
 
 	return path;
-#endif /* __LIBRETRO__
+#endif /* __LIBRETRO__ */
 }
 
 #endif
