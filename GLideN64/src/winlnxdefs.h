@@ -97,10 +97,10 @@ typedef const char 	*LPCSTR;
 
 static inline const char *GetPluginDir()
 {
-	static char path[PATH_MAX];
-#ifdef SWITCH
+#ifdef __LIBRETRO__
     return "/";
 #else
+   static char path[PATH_MAX];v
 #ifdef __USE_GNU
 	Dl_info info;
 	void *addr = (void *)GetPluginDir;
@@ -127,7 +127,7 @@ static inline const char *GetPluginDir()
 #endif
 
 	return path;
-#endif // SWITCH
+#endif /* __LIBRETRO__
 }
 
 #endif
