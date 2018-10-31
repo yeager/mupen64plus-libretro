@@ -2,6 +2,7 @@ RSPDIR             = $(ROOT_DIR)/mupen64plus-rsp-hle
 CXD4DIR            = $(ROOT_DIR)/mupen64plus-rsp-cxd4
 CORE_DIR           = $(ROOT_DIR)/mupen64plus-core
 LIBRETRO_COMM_DIR  = $(ROOT_DIR)/libretro-common
+LIBRETRO_DEPS_DIR  = $(ROOT_DIR)/libretro-deps
 AUDIO_LIBRETRO_DIR = $(ROOT_DIR)/custom/mupen64plus-core/plugin/audio_libretro
 VIDEODIR_GLIDEN64  = $(ROOT_DIR)/GLideN64
 
@@ -28,6 +29,26 @@ endif
 
 SOURCES_C += $(LIBRETRO_COMM_DIR)/libco/libco.c \
 	$(ROOT_DIR)/xxHash/xxhash.c
+
+# libpng
+SOURCES_C += \
+	$(LIBRETRO_DEPS_DIR)/libpng/png.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngerror.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngget.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngmem.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngpread.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngread.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngrio.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngrtran.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngrutil.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngset.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngtest.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngtrans.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngwio.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngwrite.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngwtran.c \
+	$(LIBRETRO_DEPS_DIR)/libpng/pngwutil.c
+INCFLAGS += -I$(LIBRETRO_DEPS_DIR)/libpng
 
 SOURCES_C += \
 	$(RSPDIR)/src/alist.c \
