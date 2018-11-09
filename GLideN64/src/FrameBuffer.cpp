@@ -625,7 +625,7 @@ void FrameBufferList::saveBuffer(u32 _address, u16 _format, u16 _size, u16 _widt
 			m_pCurrent = nullptr;
 		} else {
 			m_pCurrent->m_resolved = false;
-#ifdef VC
+#if defined(VC) || defined(CLASSIC)
 			const GLenum discards[]  = {GL_DEPTH_ATTACHMENT};
 			glDiscardFramebufferEXT(GL_FRAMEBUFFER, 1, discards);
 #endif
@@ -757,7 +757,7 @@ void FrameBufferList::attachDepthBuffer()
 	if (m_pCurrent == nullptr)
 		return;
 
-#ifdef VC
+#if defined(VC) || defined(CLASSIC)
 	const GLenum discards[]  = {GL_DEPTH_ATTACHMENT};
 	glDiscardFramebufferEXT(GL_FRAMEBUFFER, 1, discards);
 #endif
@@ -991,7 +991,7 @@ void FrameBufferList::renderBuffer(u32 _address)
 	ogl.swapBuffers();
 	if (m_pCurrent != nullptr) {
 		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_pCurrent->m_FBO);
-#ifdef VC
+#if defined(VC) || defined(CLASSIC)
 		const GLenum discards[]  = {GL_DEPTH_ATTACHMENT};
 		glDiscardFramebufferEXT(GL_FRAMEBUFFER, 1, discards);
 #endif

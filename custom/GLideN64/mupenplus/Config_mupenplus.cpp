@@ -127,7 +127,7 @@ void Config_LoadConfig()
 	config.generalEmulation.enableHWLighting = EnableHWLighting;
 	config.generalEmulation.correctTexrectCoords = CorrectTexrectCoords;
 	config.generalEmulation.enableNativeResTexrects = enableNativeResTexrects;
-	config.generalEmulatioenableLegacyBlending = enableLegacyBlending;
+	config.generalEmulation.enableLegacyBlending = enableLegacyBlending;
 #if defined(VC) || defined(CLASSIC)
 	config.frameBufferEmulation.copyDepthToRDRAM = 0;
 #else

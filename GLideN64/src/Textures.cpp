@@ -526,7 +526,7 @@ void TextureCache::destroy()
 
 void TextureCache::_checkCacheSize()
 {
-#ifdef VC
+#if defined(VC) || defined(CLASSIC)
 	const size_t maxCacheSize = 15000;
 #else
 	const size_t maxCacheSize = 16384;
