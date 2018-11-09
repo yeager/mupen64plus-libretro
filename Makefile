@@ -27,6 +27,10 @@ ifeq ($(platform),)
       platform = win
    endif
 else ifneq (,$(findstring armv,$(platform)))
+    ifeq (,$(findstring classic_,$(platform)))
+        override platform += unix
+    endif
+else ifneq (,$(findstring rpi,$(platform)))
    override platform += unix
 else ifneq (,$(findstring odroid,$(platform)))
    override platform += unix
@@ -47,14 +51,7 @@ else ifneq ($(findstring MINGW,$(shell uname -a)),)
    system_platform = win
 endif
 
-# Cross compile ?
-
-ifeq (,$(ARCH))
-   ARCH = $(shell uname -m)
-endif
-
-# Cross compile ?
-
+# Cross compile?
 ifeq (,$(ARCH))
    ARCH = $(shell uname -m)
 endif
@@ -118,6 +115,42 @@ else ifneq (,$(findstring rpi,$(platform)))
    endif
    COREFLAGS += -DOS_LINUX
    ASFLAGS = -f elf -d ELF_TYPE
+
+# Classic Platforms ####################
+# Platform affix = classic_<ISA>_<µARCH>
+# Help at https://modmyclassic.com/comp
+
+# (armv7 a7, hard point, neon based) ### 
+# NESC, SNESC, C64 mini 
+else ifeq ($(platform), classic_armv7_a7)
+	TARGET := $(TARGET_NAME)_libretro.so
+    LDFLAGS += -shared -Wl,--version-script=$(LIBRETRO_DIR)/link.T -Wl,--no-undefined
+    GLES = 1
+    GL_LIB := -lGLESv2
+	fpic := -fPIC
+	CPUFLAGS += -Ofast \
+	-flto=4 -fwhole-program -fuse-linker-plugin \
+	-fdata-sections -ffunction-sections -Wl,--gc-sections \
+	-fno-stack-protector -fno-ident -fomit-frame-pointer \
+	-falign-functions=1 -falign-jumps=1 -falign-loops=1 \
+	-fno-unwind-tables -fno-asynchronous-unwind-tables -fno-unroll-loops \
+	-fmerge-all-constants -fno-math-errno \
+	-marm -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+	HAVE_NEON = 1
+	WITH_DYNAREC=arm
+    COREFLAGS += -DOS_LINUX
+    ASFLAGS = -f elf -d ELF_TYPE
+    LDFLAGS += -marm -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+	ifeq ($(shell echo `$(CC) -dumpversion` "< 4.9" | bc -l), 1)
+	  CFLAGS += -march=armv7-a
+	else
+	  CFLAGS += -march=armv7ve
+	  # If gcc is 5.0 or later
+	  ifeq ($(shell echo `$(CC) -dumpversion` ">= 5" | bc -l), 1)
+	    LDFLAGS += -static-libgcc -static-libstdc++
+	  endif
+	endif
+#######################################
 
 # Nintendo Switch
 else ifeq ($(platform), libnx)
@@ -353,11 +386,13 @@ LDFLAGS    += $(fpic) -O2 -lz
 
 all: $(TARGET)
 $(TARGET): $(OBJECTS)
+	@echo "** BUILDING $(TARGET) FOR PLATFORM $(platform) **"
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
 	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS) $(GL_LIB)
 endif
+	@echo "** BUILD SUCCESSFUL! GG NO RE **"
 
 %.o: %.asm
 	nasm $(ASFLAGS) $< -o $@
