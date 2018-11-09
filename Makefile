@@ -124,9 +124,9 @@ else ifneq (,$(findstring rpi,$(platform)))
 # NESC, SNESC, C64 mini 
 else ifeq ($(platform), classic_armv7_a7)
 	TARGET := $(TARGET_NAME)_libretro.so
-    LDFLAGS += -shared -Wl,--version-script=$(LIBRETRO_DIR)/link.T -Wl,--no-undefined
-    GLES = 1
-    GL_LIB := -lGLESv2
+	LDFLAGS += -shared -Wl,--version-script=$(LIBRETRO_DIR)/link.T -Wl,--no-undefined
+	GLES = 1
+	GL_LIB := -lGLESv2
 	fpic := -fPIC
 	CPUFLAGS += -Ofast \
 	-flto=4 -fwhole-program -fuse-linker-plugin \
@@ -138,9 +138,11 @@ else ifeq ($(platform), classic_armv7_a7)
 	-marm -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
 	HAVE_NEON = 1
 	WITH_DYNAREC=arm
-    COREFLAGS += -DOS_LINUX
-    ASFLAGS = -f elf -d ELF_TYPE
-    LDFLAGS += -marm -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+	COREFLAGS += -DOS_LINUX
+	ASFLAGS = -f elf -d ELF_TYPE
+	LDFLAGS += -marm -mtune=cortex-a7 -mfpu=neon-vfpv4 -mfloat-abi=hard
+	#This fixes the config for MALI based devices...
+	CPUFLAGS += -DCLASSIC
 	ifeq ($(shell echo `$(CC) -dumpversion` "< 4.9" | bc -l), 1)
 	  CFLAGS += -march=armv7-a
 	else

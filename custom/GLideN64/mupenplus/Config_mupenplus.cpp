@@ -118,7 +118,7 @@ void Config_LoadConfig()
 	u32 hacks = config.generalEmulation.hacks;
 	config.resetToDefaults();
 	config.frameBufferEmulation.aspect = AspectRatio;
-#ifdef VC
+#if defined(VC) || defined(CLASSIC)
 	config.frameBufferEmulation.enable = 0;
 #else
 	config.frameBufferEmulation.enable = EnableFBEmulation;
@@ -127,8 +127,12 @@ void Config_LoadConfig()
 	config.generalEmulation.enableHWLighting = EnableHWLighting;
 	config.generalEmulation.correctTexrectCoords = CorrectTexrectCoords;
 	config.generalEmulation.enableNativeResTexrects = enableNativeResTexrects;
-	config.generalEmulation.enableLegacyBlending = enableLegacyBlending;
+	config.generalEmulatioenableLegacyBlending = enableLegacyBlending;
+#if defined(VC) || defined(CLASSIC)
+	config.frameBufferEmulation.copyDepthToRDRAM = 0;
+#else
 	config.frameBufferEmulation.copyDepthToRDRAM = EnableCopyDepthToRDRAM;
+#endif
 #if defined(GLES2) && !defined(ANDROID)
 	config.frameBufferEmulation.copyToRDRAM = Config::ctDisable;
 #else
