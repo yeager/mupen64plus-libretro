@@ -150,11 +150,9 @@ static void setup_variables(void)
         { "mupen64plus-MultiSampling",
             "MSAA level; 0|2|4|8|16" },
 #endif
+#if !defined(VC) && !defined(CLASSIC)
         { "mupen64plus-EnableFBEmulation",
-#if defined(VC) || defined(CLASSIC)
-            "Framebuffer Emulation; False|True" },
-#else
-            "Framebuffer Emulation; False|True" },
+            "Framebuffer Emulation; True|False" },
 #endif				
         { "mupen64plus-EnableCopyColorToRDRAM",
 #ifndef HAVE_OPENGLES
@@ -162,10 +160,8 @@ static void setup_variables(void)
 #else
             "Color buffer to RDRAM; Off|Async|Sync" },
 #endif
+#if !defined(VC) && !defined(CLASSIC)
         { "mupen64plus-EnableCopyDepthToRDRAM",
-#if defined(VC) || defined(CLASSIC)
-            "Depth buffer to RDRAM; Off|Software|FromMem" },
-#else
             "Depth buffer to RDRAM; Software|FromMem|Off" },
 #endif
         { "mupen64plus-EnableHWLighting",
