@@ -165,6 +165,14 @@ ifeq ($(WITH_DYNAREC), arm)
 	SOURCES_ASM += \
 		$(CORE_DIR)/src/r4300/new_dynarec/arm/linkage_arm.S
 endif
+ifeq ($(WITH_DYNAREC), aarch64)
+	DYNAREC_USED = 1
+	DYNAFLAGS += -DNEW_DYNAREC=4
+    SOURCES_C += $(CORE_DIR)/src/r4300/new_dynarec/new_dynarec_64.c
+	SOURCES_C += $(CORE_DIR)/src/r4300/empty_dynarec.c
+    SOURCES_ASM += \
+        $(CORE_DIR)/src/r4300/new_dynarec/arm64/linkage_arm64.S
+endif
 ifeq ($(WITH_DYNAREC), x86)
 	COREFLAGS += -DARCH_MIN_SSE2 -msse -msse2
 	DYNAREC_USED = 1

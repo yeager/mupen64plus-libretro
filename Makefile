@@ -65,6 +65,8 @@ ifeq ($(ARCH), $(filter $(ARCH), i386 i686))
    PIC = 0
 else ifeq ($(ARCH), $(filter $(ARCH), arm))
    WITH_DYNAREC = arm
+else ifeq ($(ARCH), $(filter $(ARCH), aarch64))
+   WITH_DYNAREC = aarch64
 endif
 
 TARGET_NAME := mupen64plus
