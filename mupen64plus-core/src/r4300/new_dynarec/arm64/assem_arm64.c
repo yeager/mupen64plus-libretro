@@ -40,6 +40,7 @@ typedef enum {
 static void *dynamic_linker(void * src, u_int vaddr);
 static void *dynamic_linker_ds(void * src, u_int vaddr);
 static void invalidate_addr(u_int addr);
+static void emit_read_ptr(intptr_t addr, int rt);
 
 static unsigned int needs_clear_cache[1<<(TARGET_SIZE_2-17)];
 
@@ -315,6 +316,7 @@ static void *dynamic_linker(void * src, u_int vaddr)
       int *ptr=(int*)src;
       assert(((*ptr&0xfc000000)==0x14000000)||((*ptr&0xff000000)==0x54000000)); //b or b.cond
       //TOBEDONE: Avoid disabling link between blocks for conditional branches
+#ifndef HAVE_LIBNX
       if((*ptr&0xfc000000)==0x14000000) { //b
         int offset=((signed int)(*ptr<<6)>>6)<<2;
         u_int *ptr2=(u_int*)((intptr_t)ptr+offset);
@@ -327,6 +329,7 @@ static void *dynamic_linker(void * src, u_int vaddr)
         set_jump_target((intptr_t)ptr, (uintptr_t)head->addr);
         __clear_cache((void*)ptr, (void*)((uintptr_t)ptr+4));
       }
+#endif
       #ifdef NEW_DYNAREC_DEBUG
       print_debug_info(vaddr);
       #endif
@@ -389,7 +392,10 @@ static void *dynamic_linker(void * src, u_int vaddr)
   }
 
   int r=new_recompile_block(vaddr);
-  if(r==0) return dynamic_linker(src, vaddr);
+  if(r==0) {
+      void* link_res = dynamic_linker(src, vaddr);
+      return link_res;
+  } 
   // Execute in unmapped page, generate pagefault exception
   g_cp0_regs[CP0_STATUS_REG]|=2;
   g_cp0_regs[CP0_CAUSE_REG]=0x8;
@@ -2424,18 +2430,19 @@ static void emit_set_if_carry64_32(int u1, int l1, int u2, int l2, int rt)
   emit_cmovb_imm(1,rt);
 }
 
-static void emit_call(intptr_t a)
-{
-  assem_debug("bl %x (%x+%x)",a,(intptr_t)out,a-(intptr_t)out);
-  u_int offset=genjmp(a);
-  output_w32(0x94000000|offset);
-}
-
 static void emit_jmp(intptr_t a)
 {
   assem_debug("b %x (%x+%x)",a,(intptr_t)out,a-(intptr_t)out);
-  u_int offset=genjmp(a);
-  output_w32(0x14000000|offset);
+  u_int off=genjmp(a);
+  output_w32(0x14000000|off);
+}
+
+static void emit_call(intptr_t a)
+{
+  intptr_t offset=a-(intptr_t)out;
+  assem_debug("bl %x (%x+%x)",a,(intptr_t)out,a-(intptr_t)out);
+  u_int off=genjmp(a);
+  output_w32(0x94000000|off);
 }
 
 static void emit_jne(intptr_t a)
@@ -3455,15 +3462,15 @@ static void emit_adr(intptr_t addr, int rt)
 
 static void emit_read_ptr(intptr_t addr, int rt)
 {
-  int offset=addr-(intptr_t)out;
+  intptr_t offset=addr-(intptr_t)out;
   if(offset>=-1048576&&offset<1048576){
-    assem_debug("adr %d,#%d",regname64[rt],offset);
+    assem_debug("adr %s,#%d",regname64[rt],offset);
     output_w32(0x10000000|((u_int)offset&0x3)<<29|(((u_int)offset>>2)&0x7ffff)<<5|rt);
   }
   else{
     offset=((addr&(intptr_t)~0xfff)-((intptr_t)out&(intptr_t)~0xfff))>>12;
     assert((((intptr_t)out&(intptr_t)~0xfff)+(offset<<12))==(addr&(intptr_t)~0xfff));
-    assem_debug("adrp %d,#%d",regname64[rt],offset);
+    assem_debug("adrp %s,#%d",regname64[rt],offset);
     output_w32(0x90000000|((u_int)offset&0x3)<<29|(((u_int)offset>>2)&0x7ffff)<<5|rt);
     if((addr&(intptr_t)0xfff)!=0)
       assem_debug("add %s, %s, #%d",regname64[rt],regname64[rt],addr&0xfff);
@@ -6686,7 +6693,9 @@ static void do_clear_cache(void)
               end+=4096;
               j++;
             }else{
+#ifndef HAVE_LIBNX
               __clear_cache((char *)start,(char *)end);
+#endif
               //cacheflush((void *)start,(void *)end,0);
               break;
             }

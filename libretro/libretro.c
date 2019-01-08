@@ -6,6 +6,10 @@
 #include "libretro_private.h"
 #include "GLideN64_libretro.h"
 
+#ifdef HAVE_LIBNX
+#include <switch.h>
+#endif
+
 #include <libco.h>
 
 #include <glsm/glsmsym.h>
@@ -128,7 +132,11 @@ static void setup_variables(void)
     struct retro_variable variables[] = {
         { "mupen64plus-cpucore",
 #ifdef DYNAREC
+#ifdef HAVE_LIBNX
+            "CPU Core; cached_interpreter|pure_interpreter|dynamic_recompiler" },
+#else
             "CPU Core; dynamic_recompiler|cached_interpreter|pure_interpreter" },
+#endif
 #else
             "CPU Core; cached_interpreter|pure_interpreter" },
 #endif
@@ -893,8 +901,26 @@ bool retro_load_game(const struct retro_game_info *game)
     return true;
 }
 
+#ifdef HAVE_LIBNX
+extern Jit dynarec_jit;
+extern void *jit_rw_buffer;
+extern void *jit_old_addr;
+#endif
 void retro_unload_game(void)
 {
+#if defined(HAVE_LIBNX) && defined(DYNAREC)
+    jitTransitionToWritable(&dynarec_jit);
+    if(jit_old_addr != 0)
+        dynarec_jit.rx_addr = jit_old_addr;
+    jit_old_addr = 0;
+    jitClose(&dynarec_jit);
+
+    if(jit_rw_buffer != 0)
+        free(jit_rw_buffer);
+
+    jit_rw_buffer = 0;
+#endif
+
     CoreDoCommand(M64CMD_ROM_CLOSE, 0, NULL);
     emu_initialized = false;
 }

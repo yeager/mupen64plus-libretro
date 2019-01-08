@@ -28,11 +28,17 @@ void Config::resetToDefaults()
 
 	texture.maxAnisotropy = 0;
 	texture.bilinearMode = BILINEAR_STANDARD;
-	texture.maxBytes = 500 * gc_uMegabyte;
 	texture.screenShotFormat = 0;
 
+#ifndef HAVE_LIBNX
+	texture.maxBytes = 500 * gc_uMegabyte;
 	generalEmulation.enableLOD = 1;
 	generalEmulation.enableNoise = 1;
+#else
+	texture.maxBytes = 1500 * gc_uMegabyte;
+	generalEmulation.enableLOD = 0;
+	generalEmulation.enableNoise = 0;
+#endif
 	generalEmulation.enableHWLighting = 0;
 	generalEmulation.enableCustomSettings = 1;
 	generalEmulation.enableShadersStorage = 1;
