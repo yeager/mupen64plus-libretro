@@ -159,17 +159,15 @@ else ifeq ($(platform), classic_armv7_a7)
 # Nintendo Switch
 else ifeq ($(platform), libnx)
    include $(DEVKITPRO)/libnx/switch_rules
-   PIC = 1
+   PIC ?= 1
+   WITH_DYNAREC := aarch64
    TARGET := $(TARGET_NAME)_libretro_$(platform).a
    CPUOPTS := -g -march=armv8-a -mtune=cortex-a57 -mtp=soft -mcpu=cortex-a57+crc+fp+simd
-   PLATCFLAGS = -O3 -ffast-math -funsafe-math-optimizations -fPIE -I$(PORTLIBS)/include/ -I$(LIBNX)/include/ -ffunction-sections -fdata-sections -ftls-model=local-exec -specs=$(LIBNX)/switch.specs
+   PLATCFLAGS = -O3 -I$(PORTLIBS)/include/ -I$(LIBNX)/include/ -ffunction-sections -fdata-sections -ftls-model=local-exec -specs=$(LIBNX)/switch.specs
    PLATCFLAGS += $(INCLUDE) -D__SWITCH__=1 -DSWITCH -DHAVE_LIBNX -D_GLIBCXX_USE_C99_MATH_TR1 -D_LDBL_EQ_DBL -funroll-loops
-   SOURCES_C += $(CORE_DIR)/src/r4300/empty_dynarec.c
    CXXFLAGS += -fno-rtti -std=gnu++11
-   COREFLAGS += -DOS_LINUX
+   COREFLAGS += -DOS_LINUX -DUSE_DEPTH_RENDERBUFFER
    GLES = 0
-   WITH_DYNAREC =
-   DYNAREC_USED = 0
    STATIC_LINKING = 1
 
 # ODROIDs

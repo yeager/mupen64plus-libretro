@@ -70,6 +70,7 @@
 // Uncomment these two lines to generate debug output:
 //#define ASSEM_DEBUG 1
 //#define INV_DEBUG 1
+//#define NEW_DYNAREC_DEBUG
 
 // Uncomment this line to output the number of NOTCOMPILED blocks as they occur:
 //#define COUNT_NOTCOMPILEDS 1
@@ -79,7 +80,7 @@
 #define CLOCK_DIVIDER count_per_op
 #define WRITE_PROTECT ((uintptr_t)1<<((sizeof(uintptr_t)<<3)-2))
 
-struct regstat
+struct regstat 
 {
   signed char regmap_entry[HOST_REGS];
   signed char regmap[HOST_REGS];
@@ -273,8 +274,8 @@ static void nullf() {}
 #ifdef NEW_DYNAREC_DEBUG
 #undef USE_MINI_HT
 #define DEBUG_CYCLE_COUNT
-//#define DEBUG_BLOCK
-//#define DEBUG_PC
+#define DEBUG_BLOCK
+#define DEBUG_PC
 static FILE * pDebugFile=NULL;
 static FILE * pDisasmFile=NULL;
 #ifdef DEBUG_BLOCK
@@ -1223,19 +1224,20 @@ static void invalidate_page(u_int page)
   }
   head=jump_out[page];
   jump_out[page]=0;
+#ifndef HAVE_LIBNX
   while(head!=NULL) {
     inv_debug("INVALIDATE: kill pointer to %x (%x)\n",head->vaddr,(intptr_t)head->addr);
       uintptr_t host_addr=(intptr_t)kill_pointer(head->addr);
     #if NEW_DYNAREC >= NEW_DYNAREC_ARM
       needs_clear_cache[(host_addr-(uintptr_t)base_addr)>>17]|=1<<(((host_addr-(uintptr_t)base_addr)>>12)&31);
     #else
-      /* avoid unused variable warning */
       (void)host_addr;
     #endif
     next=head->next;
     free(head);
     head=next;
   }
+#endif
 }
 void invalidate_block(u_int block)
 {
@@ -1322,7 +1324,7 @@ void invalidate_cached_code_new_dynarec(uint32_t addr, size_t size)
 
 #if NEW_DYNAREC >= NEW_DYNAREC_ARM
 static void invalidate_addr(u_int addr)
-{
+{    
   invalidate_block(addr>>12);
 }
 #endif
@@ -1342,7 +1344,9 @@ void invalidate_all_pages(void)
     }
   }
   #if NEW_DYNAREC >= NEW_DYNAREC_ARM
+#ifndef HAVE_LIBNX
   __clear_cache((char *)base_addr,(char *)base_addr+(1<<TARGET_SIZE_2));
+#endif
   //cacheflush((void *)base_addr,(void *)base_addr+(1<<TARGET_SIZE_2),0);
   #endif
   #ifdef USE_MINI_HT
@@ -3516,7 +3520,7 @@ static void storelr_assemble(int i,struct regstat *i_regs)
   }
   set_jump_target(done0,(intptr_t)out);
   set_jump_target(done1,(intptr_t)out);
-  set_jump_target(done2,(intptr_t)out);
+  set_jump_target(done2,(intptr_t)out); 
   if (opcode[i]==0x2C) { // SDL
     emit_testimm(temp,4);
     done0=(intptr_t)out;
@@ -6412,7 +6416,7 @@ static void pagespan_assemble(int i,struct regstat *i_regs)
     }
   }
   if((opcode[i]&0x3f)==0x14) // BEQL
-  {
+  { 
     if(s1h>=0) {
       if(s2h>=0) emit_cmp(s1h,s2h);
       else emit_test(s1h,s1h);
@@ -6510,7 +6514,7 @@ static void pagespan_assemble(int i,struct regstat *i_regs)
   else if(addr!=HOST_BTREG)
   {
     emit_mov(addr,HOST_BTREG);
-  }
+  } 
   void *branch_addr=out;
   emit_jmp(0);
   int target_addr=start+i*4+5;
@@ -7758,7 +7762,7 @@ void new_dynarec_init(void)
             MAP_FIXED | MAP_PRIVATE | MAP_ANONYMOUS,
             -1, 0)) <= 0) {DebugMessage(M64MSG_ERROR, "mmap() failed");}
 #else
-#if defined(WIN32)
+#if defined(WIN32) 
   base_addr = VirtualAlloc(NULL, 1<<TARGET_SIZE_2, MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 #else
   if ((base_addr = mmap (NULL, 1<<TARGET_SIZE_2,
@@ -7853,6 +7857,12 @@ void new_dynarec_cleanup(void)
 
 int new_recompile_block(int addr)
 {
+#ifdef HAVE_LIBNX
+  bool jit_was_executable = jit_is_executable;
+  if(jit_is_executable)
+    jit_force_writeable();
+#endif
+
 #if defined(NEW_DYNAREC_PROFILER) && !defined(PROFILER)
   copy_mapping(&memory_map);
   profiler_block(addr);
@@ -7861,7 +7871,7 @@ int new_recompile_block(int addr)
 #ifdef COUNT_NOTCOMPILEDS
   notcompiledCount++;
   DebugMessage(M64MSG_VERBOSE, "notcompiledCount=%i", notcompiledCount );
-#endif
+#endif 
   start = (u_int)addr&~3;
   //assert(((u_int)addr&1)==0);
   if ((int)addr >= 0xa4000000 && (int)addr < 0xa4001000) {
@@ -10641,7 +10651,9 @@ int new_recompile_block(int addr)
     if((regs[i].wasdirty>>10)&1) DebugMessage(M64MSG_VERBOSE, "r10 ");
     if((regs[i].wasdirty>>12)&1) DebugMessage(M64MSG_VERBOSE, "r12 ");
     #endif
+    #ifdef INV_DEBUG
     disassemble_inst(i);
+    #endif
     //printf ("ccadj[%d] = %d",i,ccadj[i]);
     #if NEW_DYNAREC == NEW_DYNAREC_X86
     DebugMessage(M64MSG_VERBOSE, "eax=%d ecx=%d edx=%d ebx=%d ebp=%d esi=%d edi=%d dirty: ",regs[i].regmap[0],regs[i].regmap[1],regs[i].regmap[2],regs[i].regmap[3],regs[i].regmap[5],regs[i].regmap[6],regs[i].regmap[7]);
@@ -11080,14 +11092,17 @@ int new_recompile_block(int addr)
   copy+=slen*4;
 
   #if NEW_DYNAREC >= NEW_DYNAREC_ARM
+  #ifndef HAVE_LIBNX
   __clear_cache((void *)beginning,out);
+  #endif
   //cacheflush((void *)beginning,out,0);
   #endif
 
   // If we're within 256K of the end of the buffer,
   // start over from the beginning. (Is 256K enough?)
-  if(out > (u_char *)((u_char *)base_addr+(1<<TARGET_SIZE_2)-MAX_OUTPUT_BLOCK_SIZE-JUMP_TABLE_SIZE))
-    out=(u_char *)base_addr;
+  if(out > (u_char *)((u_char *)base_addr+(1<<TARGET_SIZE_2)-MAX_OUTPUT_BLOCK_SIZE-JUMP_TABLE_SIZE)){
+     out=(u_char *)base_addr; 
+  }
   
   // Trap writes to any of the pages we compiled
   for(i=start>>12;i<=(int)((start+slen*4-4)>>12);i++) {
@@ -11112,7 +11127,7 @@ int new_recompile_block(int addr)
     inv_debug("EXP: Phase %d\n",expirep);
     switch((expirep>>11)&3)
     {
-      case 0:
+      case 0: 
         // Clear jump_in and jump_dirty
         ll_remove_matching_addrs(jump_in+(expirep&2047),base,shift);
         ll_remove_matching_addrs(jump_dirty+(expirep&2047),base,shift);
@@ -11140,7 +11155,7 @@ int new_recompile_block(int addr)
             ht_bin[1]=ht_bin[3];
             ht_bin[2]=ht_bin[3]=-1;
           }
-        }
+        } 
         break;
       case 3:
         // Clear jump_out
@@ -11154,9 +11169,15 @@ int new_recompile_block(int addr)
     }
     expirep=(expirep+1)&65535;
   }
+
+  //recompile_end
+#ifdef HAVE_LIBNX
+  if(jit_was_executable)
+    jit_force_executable();
+#endif
   return 0;
 }
-
+ 
 void TLBWI_new(void)
 {
   unsigned int i;
