@@ -378,6 +378,9 @@ void copy_file(char * ininame, char * fileName)
 
 void retro_init(void)
 {
+#ifdef HAVE_LIBNX
+    detectIgnoreJitKernelPatch();
+#endif
     char* sys_pathname;
     wchar_t w_pathname[PATH_SIZE];
     environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &sys_pathname);
