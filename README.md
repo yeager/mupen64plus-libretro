@@ -1,3 +1,8 @@
+# Important Notice:
+## This core is deprecated and will no longer be maintained.
+
+Please use https://github.com/libretro/mupen64plus-libretro-nx
+
 # Mupen64Plus
 
 Mupen64Plus is [mupen64plus](https://github.com/mupen64plus/mupen64plus-core) + [GLideN64](https://github.com/gonetz/GLideN64) + [libretro](http://www.libretro.com/)
