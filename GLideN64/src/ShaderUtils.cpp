@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdio.h>
+#include <string>
 #include "ShaderUtils.h"
 #include "Config.h"
 #include "Log.h"
