@@ -8,6 +8,7 @@ INCFLAGS  :=
 COREFLAGS :=
 CPUFLAGS  :=
 GLFLAGS   :=
+XTRAFLAGS := -fcommon
 
 UNAME=$(shell uname -a)
 
@@ -400,7 +401,7 @@ endif
 
 OBJECTS     += $(SOURCES_CXX:.cpp=.o) $(SOURCES_C:.c=.o) $(SOURCES_ASM:.S=.o) $(SOURCES_NASM:.asm=.o)
 CXXFLAGS    += $(CPUOPTS) $(COREFLAGS) $(INCFLAGS) $(PLATCFLAGS) $(fpic) $(CPUFLAGS) $(GLFLAGS) $(DYNAFLAGS)
-CFLAGS      += $(CPUOPTS) $(COREFLAGS) $(INCFLAGS) $(PLATCFLAGS) $(fpic) $(CPUFLAGS) $(GLFLAGS) $(DYNAFLAGS)
+CFLAGS      += $(XTRAFLAGS) $(CPUOPTS) $(COREFLAGS) $(INCFLAGS) $(PLATCFLAGS) $(fpic) $(CPUFLAGS) $(GLFLAGS) $(DYNAFLAGS)
 
 ifeq (,$(findstring android,$(platform)))
    LDFLAGS    += -lpthread
